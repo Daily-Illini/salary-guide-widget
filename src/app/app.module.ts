@@ -13,11 +13,13 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTabsModule } from '@angular/material/tabs';
 
 import { FilterRecordsPipe } from './filter-records.pipe';
+import { BarComponent } from './bar/bar.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    FilterRecordsPipe
+    FilterRecordsPipe,
+    BarComponent
   ],
   imports: [
     BrowserModule,
