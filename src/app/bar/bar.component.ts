@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Record } from './../record';
 import * as d3 from 'd3';
 
 @Component({
@@ -7,23 +9,32 @@ import * as d3 from 'd3';
   styleUrls: ['./bar.component.scss'],
 })
 export class BarComponent implements OnInit {
-  private testData = [
-    {"Framework": "Vue", "Stars": "166443", "Released": "2014"},
-    {"Framework": "React", "Stars": "150793", "Released": "2013"},
-    {"Framework": "Angular", "Stars": "62342", "Released": "2016"},
-    {"Framework": "Backbone", "Stars": "27647", "Released": "2010"},
-    {"Framework": "Ember", "Stars": "21471", "Released": "2011"},
-  ];
+  private records: Record[] = [];
   private svg;
   private margin = 50;
-  private width = 750 - (this.margin * 2);
-  private height = 400 - (this.margin * 2);
+  private width = 1000 - (this.margin * 2);
+  private height = 500 - (this.margin * 2);
 
+  constructor(
+    private httpClient: HttpClient
+  ) {}
+
+  ngOnInit(): void {
+    // access records
+    this.httpClient.get('../assets/records_new.json').subscribe(data => {
+      console.log(data);
+      this.records = data as Record[];
+      this.createSvg();
+      this.drawBars(this.records);
+    });
+  }
+
+  // graph template
   private createSvg(): void {
     this.svg = d3.select("figure#bar")
     .append("svg")
-    .attr("width", this.width + (this.margin * 2))
-    .attr("height", this.height + (this.margin * 2))
+    .attr("width", this.width + (this.margin * 2) + 200)
+    .attr("height", this.height + (this.margin * 2) + 200)
     .append("g")
     .attr("transform", "translate(" + this.margin + "," + this.margin + ")");
   }
@@ -32,7 +43,7 @@ export class BarComponent implements OnInit {
     // Create the X-axis band scale
     const x = d3.scaleBand()
     .range([0, this.width])
-    .domain(data.map(d => d.Framework))
+    .domain(Array.from(new Set<string>(this.records.map(record => record.college))))
     .padding(0.2);
 
     // Draw the X-axis on the DOM
@@ -57,18 +68,11 @@ export class BarComponent implements OnInit {
     .data(data)
     .enter()
     .append("rect")
-    .attr("x", d => x(d.Framework))
-    .attr("y", d => y(d.Stars))
+    .attr("x", d => x(d.college))
+    .attr("y", d => y(d.salary))
     .attr("width", x.bandwidth())
-    .attr("height", (d) => this.height - y(d.Stars))
+    .attr("height", (d) => this.height - y(d.salary))
     .attr("fill", "#d04a35");
-  }
-
-  constructor() { }
-
-  ngOnInit(): void {
-    this.createSvg();
-    this.drawBars(this.testData);
   }
 
 }
