@@ -1,6 +1,7 @@
+import { AppComponent } from '../app.component';
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Record } from './../record';
+import { Record } from '../record';
 import * as d3 from 'd3';
 
 @Component({
@@ -8,25 +9,25 @@ import * as d3 from 'd3';
   templateUrl: './bar.component.html',
   styleUrls: ['./bar.component.scss'],
 })
-export class BarComponent implements OnInit {
-  private records: Record[] = [];
+export class BarComponent extends AppComponent implements OnInit {
+  private colleges: string[] = [];
   private svg;
   private margin = 50;
   private width = 1000 - (this.margin * 2);
   private height = 500 - (this.margin * 2);
 
-  constructor(
-    private httpClient: HttpClient
-  ) {}
-
-  ngOnInit(): void {
-    // access records
-    this.httpClient.get('../assets/records_new.json').subscribe(data => {
-      console.log(data);
+  constructor(http: HttpClient) {
+    super(http);
+    http.get('../assets/records.json').subscribe(data => {
       this.records = data as Record[];
-      this.createSvg();
-      this.drawBars(this.records);
+      this.colleges = Array.from(new Set<string>(this.records.map(record => record.college)));
+      console.log(this.colleges);
+      this.drawBars(this.colleges);
     });
+  }
+
+  override ngOnInit(): void {
+    this.createSvg();
   }
 
   // graph template
@@ -43,7 +44,7 @@ export class BarComponent implements OnInit {
     // Create the X-axis band scale
     const x = d3.scaleBand()
     .range([0, this.width])
-    .domain(Array.from(new Set<string>(this.records.map(record => record.college))))
+    .domain(this.colleges)
     .padding(0.2);
 
     // Draw the X-axis on the DOM
@@ -68,10 +69,10 @@ export class BarComponent implements OnInit {
     .data(data)
     .enter()
     .append("rect")
-    .attr("x", d => x(d.college))
-    .attr("y", d => y(d.salary))
+    //.attr("x", d => x(d.college))
+    //.attr("y", d => y(d.salary))
     .attr("width", x.bandwidth())
-    .attr("height", (d) => this.height - y(d.salary))
+    //.attr("height", (d) => this.height - y(d.salary))
     .attr("fill", "#d04a35");
   }
 
