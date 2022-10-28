@@ -10,7 +10,7 @@ import * as d3 from 'd3';
   styleUrls: ['./bar.component.scss'],
 })
 export class BarComponent extends AppComponent implements OnInit {
-  private colleges: string[] = [];
+  private salaries: Object[] = [];
   private svg;
   private margin = 50;
   private width = 1000 - (this.margin * 2);
@@ -20,9 +20,20 @@ export class BarComponent extends AppComponent implements OnInit {
     super(http);
     http.get('../assets/records.json').subscribe(data => {
       this.records = data as Record[];
-      this.colleges = Array.from(new Set<string>(this.records.map(record => record.college)));
-      console.log(this.colleges);
-      this.drawBars(this.colleges);
+      var colleges: string[] = Array.from(new Set<string>(this.records.map(record => record.college)));
+      // what the fuck
+      for (var i = 0; i < colleges.length; i++) {
+        var collegeSalary = 0;
+        for (const r of this.records) {
+          if (colleges[i] == r.college) {
+            collegeSalary += Number(r.salary.replace(/[^0-9.-]+/g,""));
+          }
+        }
+        collegeSalary /= 1000000; /* scaling factor */
+        this.salaries.push({name : colleges[i], college : collegeSalary.toString()});
+      }
+      this.drawBars(this.salaries);
+      console.log(this.salaries);
     });
   }
 
@@ -44,7 +55,7 @@ export class BarComponent extends AppComponent implements OnInit {
     // Create the X-axis band scale
     const x = d3.scaleBand()
     .range([0, this.width])
-    .domain(this.colleges)
+    .domain(data.map(d => d.name))
     .padding(0.2);
 
     // Draw the X-axis on the DOM
@@ -57,7 +68,7 @@ export class BarComponent extends AppComponent implements OnInit {
 
     // Create the Y-axis band scale
     const y = d3.scaleLinear()
-    .domain([0, 200000])
+    .domain([0, 150])
     .range([this.height, 0]);
 
     // Draw the Y-axis on the DOM
@@ -69,11 +80,11 @@ export class BarComponent extends AppComponent implements OnInit {
     .data(data)
     .enter()
     .append("rect")
-    //.attr("x", d => x(d.college))
-    //.attr("y", d => y(d.salary))
+    .attr("x", d => x(d.name))
+    .attr("y", d => y(d.college))
     .attr("width", x.bandwidth())
-    //.attr("height", (d) => this.height - y(d.salary))
-    .attr("fill", "#d04a35");
+    .attr("height", (d) => this.height - y(d.college))
+    .attr("fill", "#FF5F05");
   }
 
 }
