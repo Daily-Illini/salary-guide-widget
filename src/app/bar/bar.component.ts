@@ -10,7 +10,10 @@ import * as d3 from 'd3';
   styleUrls: ['./bar.component.scss'],
 })
 export class BarComponent extends AppComponent implements OnInit {
+  /* graph data */
   private salaries: Object[] = [];
+  private maxSalary: number;
+  /* graph container dimensions */
   private svg;
   private margin = 50;
   private width = 1000 - (this.margin * 2);
@@ -20,20 +23,8 @@ export class BarComponent extends AppComponent implements OnInit {
     super(http);
     http.get('../assets/records.json').subscribe(data => {
       this.records = data as Record[];
-      var colleges: string[] = Array.from(new Set<string>(this.records.map(record => record.college)));
-      // what the fuck
-      for (var i = 0; i < colleges.length; i++) {
-        var collegeSalary = 0;
-        for (const r of this.records) {
-          if (colleges[i] == r.college) {
-            collegeSalary += Number(r.salary.replace(/[^0-9.-]+/g,""));
-          }
-        }
-        collegeSalary /= 1000000; /* scaling factor */
-        this.salaries.push({name : colleges[i], college : collegeSalary.toString()});
-      }
+      this.getSalaries();
       this.drawBars(this.salaries);
-      console.log(this.salaries);
     });
   }
 
@@ -41,7 +32,27 @@ export class BarComponent extends AppComponent implements OnInit {
     this.createSvg();
   }
 
-  // graph template
+  // retrieves total salary budget for each college
+  private getSalaries(): void {
+    var maxSalary: number = 0;
+    var colleges: string[] = Array.from(new Set<string>(this.records.map(record => record.college)));
+    for (var i = 0; i < colleges.length; i++) {
+      var collegeSalary = 0;
+      for (const r of this.records) {
+        if (colleges[i] == r.college) {
+          collegeSalary += Number(r.salary.replace(/[^0-9.-]+/g,""));
+        }
+        maxSalary = Math.max(maxSalary, collegeSalary);
+      }
+      collegeSalary /= 1000000; // scaling
+      this.salaries.push({name : colleges[i], college : collegeSalary.toString()});
+    }
+    this.maxSalary = maxSalary / 1000000; // scaling
+    console.log(this.maxSalary);
+    console.log(this.salaries);
+  }
+
+  // draw graph container
   private createSvg(): void {
     this.svg = d3.select("figure#bar")
     .append("svg")
@@ -51,6 +62,7 @@ export class BarComponent extends AppComponent implements OnInit {
     .attr("transform", "translate(" + this.margin + "," + this.margin + ")");
   }
 
+  // draws bar graph
   private drawBars(data: any[]): void {
     // Create the X-axis band scale
     const x = d3.scaleBand()
@@ -68,7 +80,7 @@ export class BarComponent extends AppComponent implements OnInit {
 
     // Create the Y-axis band scale
     const y = d3.scaleLinear()
-    .domain([0, 150])
+    .domain([0, this.maxSalary])
     .range([this.height, 0]);
 
     // Draw the Y-axis on the DOM
@@ -86,5 +98,4 @@ export class BarComponent extends AppComponent implements OnInit {
     .attr("height", (d) => this.height - y(d.college))
     .attr("fill", "#FF5F05");
   }
-
 }
